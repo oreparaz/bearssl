@@ -82,7 +82,8 @@ br_ecdsa_i31_vrfy_raw(const br_ec_impl *impl,
 	/*
 	 * Public key point must have the proper size for this curve.
 	 */
-	if (pk->qlen != cd->generator_len) {
+	if ((pk->qlen != cd->generator_len) /* uncompressed */ &&
+	    (pk->qlen != (cd->generator_len/2) + 1) /* compressed */) {
 		return 0;
 	}
 
@@ -143,8 +144,9 @@ br_ecdsa_i31_vrfy_raw(const br_ec_impl *impl,
 	 * Compute the point x*Q + y*G.
 	 */
 	ulen = cd->generator_len;
-	memcpy(eU, pk->q, ulen);
-	res = impl->muladd(eU, NULL, ulen,
+	memset(eU, 0, ulen);
+	memcpy(eU, pk->q, pk->qlen);
+	res = impl->muladd(eU, NULL, pk->qlen,
 		tx, nlen, ty, nlen, cd->curve);
 
 	/*
